@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>頭管洗削計算（單檔版 v4）</title>
+<style>
+  :root{
+    --grid: #000;
+    --thick: 2px;
+    --thin: 1px;
+    --header-bg: #eeeeee;
+    --input-yellow: #fff59d;
+    --read-blue: #d8e4f7;
+  }
+  body{ font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "Helvetica Neue", Arial; padding: 12px; }
+  .panel{ display: grid; gap: .5rem; margin-bottom: .75rem; border: 1px solid var(--grid); padding: .75rem; border-radius: .5rem; background: #fff; }
+  .panel h2{ margin: 0; font-size: 1rem; }
+  .inputs{ display: grid; grid-template-columns: repeat(4, minmax(140px,1fr)); gap: .5rem; }
+  .field{ display: grid; gap: .25rem; }
+  .field label{ font-size: .85rem; color: #333; }
+  .field input{ padding: .4rem .5rem; border: 1px solid #333; border-radius: .25rem; background: var(--input-yellow); font-size: 1rem; text-align: right; width: 100%; }
+  .wrap{ max-width: 1024px; }
+  .sheet{ border-collapse: collapse; table-layout: fixed; width: 100%; }
+  .sheet td, .sheet th{ border: var(--thin) solid var(--grid); padding: .4rem .5rem; vertical-align: middle; }
+  .sheet td.num, .sheet th.num{ text-align: right; font-variant-numeric: tabular-nums; }
+  .sheet td.center, .sheet th.center{ text-align: center; }
+  .sheet thead th{ background: var(--header-bg); font-weight: 600; text-align: center; }
+  /* outer thick border */
+  .sheet{ border: var(--thick) solid var(--grid); }
+  .thick-right{ border-right: var(--thick) solid var(--grid) !important; }
+  .thick-bottom{ border-bottom: var(--thick) solid var(--grid) !important; }
+  .merge-title{ font-weight: 700; text-align: center; }
+  .label{ background: #fafafa; font-weight: 600; text-align: center; }
+  .read-col{ background: var(--read-blue); font-weight: 600; text-align: center; }
+  .rowhead{ text-align: center; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h2>輸入（僅需填黃底）</h2>
+      <div class="inputs">
+        <div class="field"><label for="b11">實際頭管長度</label><input id="b11" type="number" step="0.001" value="124" /></div>
+        <div class="field"><label for="b12">圖面頭管長度</label><input id="b12" type="number" step="0.001" value="120" /></div>
+        <div class="field"><label for="b13">上碗刀具深度</label><input id="b13" type="number" step="0.001" value="15" /></div>
+        <div class="field"><label for="b14">下碗刀具深度</label><input id="b14" type="number" step="0.001" value="15" /></div>
+      </div>
+    </div>
+
+    <table class="sheet" aria-label="頭管洗削計算 (Excel 24~31)">
+      <colgroup>
+        <col style="width: 12%">
+        <col style="width: 15%">
+        <col style="width: 15%">
+        <col style="width: 15%">
+        <col style="width: 12%">
+        <col style="width: 15%">
+        <col style="width: 15%">
+        <col style="width: 15%">
+      </colgroup>
+      <tbody>
+        <!-- 參數設定 A24~H24 -->
+        <tr><td class="merge-title thick-bottom" colspan="8">參數設定</td></tr>
+
+        <!-- A25~D25 / E25~H25 -->
+        <tr>
+          <td class="merge-title thick-bottom" colspan="4">鉸孔1進刀設定</td>
+          <td class="merge-title thick-bottom" colspan="4">鉸孔2進刀設定</td>
+        </tr>
+
+        <!-- 標題列 -->
+        <tr>
+          <td class="label">讀取</td>
+          <td class="label center">目標位置<br>mm</td>
+          <td class="label center">速度設定<br>mm/s</td>
+          <td class="label center">延時<br>s</td>
+          <td class="label">讀取</td>
+          <td class="label center">目標位置<br>mm</td>
+          <td class="label center">速度設定<br>mm/s</td>
+          <td class="label center">延時<br>s</td>
+        </tr>
+
+        <!-- 工作原點 -->
+        <tr>
+          <td class="read-col">工作原點</td>
+          <td class="num" id="B27">0</td>
+          <td class="num" id="C27">0</td>
+          <td class="num" id="D27">0</td>
+          <td class="read-col">工作原點</td>
+          <td class="num" id="F27">0</td>
+          <td class="num" id="G27">0</td>
+          <td class="num" id="H27">0</td>
+        </tr>
+
+        <!-- 加工起點 -->
+        <tr>
+          <td class="read-col">加工起點</td>
+          <td class="num" id="B28"></td>
+          <td class="num" id="C28"></td>
+          <td class="num" id="D28">0</td>
+          <td class="read-col">加工起點</td>
+          <td class="num" id="F28"></td>
+          <td class="num" id="G28"></td>
+          <td class="num" id="H28">0</td>
+        </tr>
+
+        <!-- 1 -->
+        <tr>
+          <td class="read-col">1</td>
+          <td class="num" id="B29"></td>
+          <td class="num" id="C29"></td>
+          <td class="num" id="D29"></td>
+          <td class="read-col">1</td>
+          <td class="num" id="F29"></td>
+          <td class="num" id="G29"></td>
+          <td class="num" id="H29">0</td>
+        </tr>
+
+        <!-- 2 -->
+        <tr>
+          <td class="read-col">2</td>
+          <td class="num" id="B30"></td>
+          <td class="num" id="C30"></td>
+          <td class="num" id="D30"></td>
+          <td class="read-col">2</td>
+          <td class="num" id="F30"></td>
+          <td class="num" id="G30"></td>
+          <td class="num" id="H30">0</td>
+        </tr>
+
+        <!-- 總秒數 -->
+        <tr>
+          <td class="label">總秒數</td>
+          <td></td><td></td>
+          <td class="num thick-bottom" id="D31"></td>
+          <td class="label">總秒數</td>
+          <td></td><td></td>
+          <td class="num thick-bottom" id="H31"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+<script>
+// 計算邏輯：依 Excel 公式
+(function(){
+  // 常數（由試算表抄讀）
+  const C1 = 82.375, F1 = 159.225, C20 = 76.85;
+  const D19 = 50,   H19 = 50;
+  const D20 = 0.8,  H20 = 0.8;
+  const D21 = 0.05, H21 = 0.05;
+
+  function toNum(v){ const n = Number(v); return isFinite(n) ? n : 0; }
+  function fmt(n){ return (Math.round(n*1000)/1000).toFixed(3); }
+  function fmt1(n){ return (Math.round(n*10)/10).toFixed(1); }
+  const $ = (id)=>document.getElementById(id);
+
+  function recalc(){
+    const B11 = toNum(document.getElementById('b11').value);
+    const B12 = toNum(document.getElementById('b12').value);
+    const B13 = toNum(document.getElementById('b13').value);
+    const B14 = toNum(document.getElementById('b14').value);
+
+    // C18..J21
+    const C18=0, G18=0; // 起點為 0
+    const C19 = C20 - B14;
+    const E19 = (C19 - C18) / D19;
+    const G19 = (F1 - (B11 - C1)) - B13;
+    const I19 = (G19 - G18) / H19;
+    const F19 = I19 - E19;
+
+    const E20 = (C20 - C19) / D20;
+    const G20 = (F1 - (B11 - C1));
+    const I20 = (G20 - G19) / H20;
+    const F20 = I20 - E20;
+
+    const C21 = C20 + (B11 - B12) / 2.0;
+    const E21 = (C21 - C20) / D21;
+    const G21 = G20 + (B11 - B12) / 2.0;
+    const I21 = (G21 - G20) / H21;
+    const F21 = I21 - E21;
+
+    const E22 = E19 + E20 + E21;
+    const I22 = I19 + I20 + I21;
+
+    // 對應顯示列（27~31）
+    // 工作原點
+    document.getElementById('B27').textContent = fmt(C18);
+    document.getElementById('C27').textContent = fmt(0);
+    document.getElementById('D27').textContent = fmt1(0);
+    document.getElementById('F27').textContent = fmt(G18);
+    document.getElementById('G27').textContent = fmt(0);
+    document.getElementById('H27').textContent = fmt1(0);
+
+    // 加工起點
+    document.getElementById('B28').textContent = fmt(C19);
+    document.getElementById('C28').textContent = fmt(D19);
+    document.getElementById('D28').textContent = fmt1(0);
+    document.getElementById('F28').textContent = fmt(G19);
+    document.getElementById('G28').textContent = fmt(H19);
+    document.getElementById('H28').textContent = fmt1(0);
+
+    // 1
+    document.getElementById('B29').textContent = fmt(C20);
+    document.getElementById('C29').textContent = fmt(D20);
+    document.getElementById('D29').textContent = fmt1(F20);
+    document.getElementById('F29').textContent = fmt(G20);
+    document.getElementById('G29').textContent = fmt(H20);
+    document.getElementById('H29').textContent = fmt1(0);
+
+    // 2
+    document.getElementById('B30').textContent = fmt(C21);
+    document.getElementById('C30').textContent = fmt(D21);
+    document.getElementById('D30').textContent = fmt1(F21);
+    document.getElementById('F30').textContent = fmt(G21);
+    document.getElementById('G30').textContent = fmt(H21);
+    document.getElementById('H30').textContent = fmt1(0);
+
+    // 總秒數
+    document.getElementById('D31').textContent = fmt1(E22);
+    document.getElementById('H31').textContent = fmt1(I22);
+  }
+
+  ['b11','b12','b13','b14'].forEach(id=> document.getElementById(id).addEventListener('input', recalc));
+  recalc();
+})();
+</script>
+</body>
+</html>
